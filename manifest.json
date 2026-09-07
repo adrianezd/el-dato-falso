@@ -1,0 +1,12 @@
+{
+  "name": "El Dato Falso",
+  "short_name": "El Dato Falso",
+  "description": "Todos tenéis los mismos datos salvo quien miente sin saberlo.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#101820",
+  "theme_color": "#101820",
+  "icons": [
+    { "src": "favicon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}
