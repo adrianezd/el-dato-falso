@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>El Dato Falso — juego de fiesta de trivia y mentirosos, gratis</title>
-<meta name="description" content="Juego de fiesta gratis, sin descargar ninguna app. Todos reciben los mismos datos sobre un tema salvo los mentirosos, a quienes se les cuela un dato falso sin que ellos lo sepan. Adivinad quién tiene el dato falso. Un solo móvil compartido.">
+<meta name="description" content="Juego de fiesta gratis, sin descargar ninguna app. Cada jugador recibe un dato distinto sobre un tema: casi todos son ciertos, pero los mentirosos tienen uno falso sin saberlo. Adivinad quién tiene el dato falso. Un solo móvil compartido.">
 <meta name="keywords" content="juego de fiesta, juego de trivia, juego del mentiroso, juego para grupos, juego de móvil para fiestas, juego sin descargar app, juegos para reuniones, verdad o mentira">
 <link rel="canonical" href="https://adrianezd.github.io/el-dato-falso/">
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
@@ -12,14 +12,14 @@
 <meta name="theme-color" content="#101820">
 
 <meta property="og:title" content="El Dato Falso — juego de fiesta de trivia y mentirosos">
-<meta property="og:description" content="Todos reciben los mismos datos sobre un tema salvo los mentirosos, que reciben un dato falso sin saberlo. Adivinad quién miente. Gratis, un solo móvil, sin descargas.">
+<meta property="og:description" content="Cada jugador recibe un dato distinto sobre un tema; los mentirosos tienen uno falso sin saberlo. Adivinad quién miente. Gratis, un solo móvil, sin descargas.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://adrianezd.github.io/el-dato-falso/">
 <meta property="og:image" content="https://adrianezd.github.io/el-dato-falso/favicon.svg">
 
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="El Dato Falso">
-<meta name="twitter:description" content="Todos reciben los mismos datos salvo los mentirosos, que tienen uno falso sin saberlo. Juego de fiesta gratis, un solo móvil.">
+<meta name="twitter:description" content="Cada jugador tiene un dato distinto; los mentirosos tienen uno falso sin saberlo. Juego de fiesta gratis, un solo móvil.">
 <meta name="twitter:image" content="https://adrianezd.github.io/el-dato-falso/favicon.svg">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -34,7 +34,7 @@
     {
       "@type": "Game",
       "name": "El Dato Falso",
-      "description": "Juego de fiesta de trivia para grupos, un solo móvil compartido. Se elige un tema y casi todos los jugadores reciben los mismos 4 datos verdaderos; a los mentirosos se les cambia uno por un dato falso sin que ellos lo sepan. Cada jugador lee sus datos en voz alta y el grupo vota quién tiene el dato falso.",
+      "description": "Juego de fiesta de trivia para grupos, un solo móvil compartido. Se elige un tema y cada jugador recibe un dato distinto sobre él; casi todos son ciertos, pero los mentirosos reciben uno falso sin saberlo. Cada jugador lee su dato en voz alta y el grupo vota quién tiene el dato falso.",
       "genre": ["Juego de fiesta", "Juego de trivia", "Juego social"],
       "applicationCategory": "Game",
       "gamePlatform": "Web Browser",
@@ -50,12 +50,12 @@
         {
           "@type": "Question",
           "name": "¿Cómo se juega a El Dato Falso?",
-          "acceptedAnswer": { "@type": "Answer", "text": "Se elige un tema (un animal, un país, un famoso, una comida). Casi todos los jugadores ven los mismos 4 datos verdaderos sobre ese tema; a los mentirosos se les cambia uno de esos datos por uno falso, sin decírselo. Cada jugador lee sus datos en voz alta y el grupo vota quién cree que tiene el dato falso." }
+          "acceptedAnswer": { "@type": "Answer", "text": "Se elige un tema (un animal, un país, un famoso, una comida). Cada jugador recibe un único dato distinto sobre ese tema: casi todos son ciertos, pero los mentirosos reciben un dato falso, sin decírselo. Cada jugador lee su dato en voz alta y el grupo vota quién cree que tiene el dato falso." }
         },
         {
           "@type": "Question",
           "name": "¿El mentiroso sabe que tiene un dato falso?",
-          "acceptedAnswer": { "@type": "Answer", "text": "No. Ve sus 4 datos como si fueran todos ciertos, así que los lee con total naturalidad. El grupo tiene que detectar el dato falso usando su propio conocimiento general." }
+          "acceptedAnswer": { "@type": "Answer", "text": "No. Ve su dato como si fuera cierto, así que lo lee con total naturalidad. El grupo tiene que detectar el dato falso usando su propio conocimiento general." }
         },
         {
           "@type": "Question",
@@ -78,7 +78,7 @@
 <header class="site-header">
   <p class="site-kicker">Juego de fiesta · 1 móvil compartido</p>
   <h1>El Dato Falso</h1>
-  <p class="tagline">Todos tenéis los mismos datos... salvo quien miente sin saberlo.</p>
+  <p class="tagline">Cada uno tiene un dato distinto... salvo quien miente sin saberlo.</p>
 </header>
 
 <main>
@@ -136,7 +136,7 @@
     <section class="screen" data-screen="vote" hidden>
       <div class="discussion-wrap">
         <h2>¿Quién tiene el dato falso?</h2>
-        <p class="discussion-help">Cada jugador lee sus 4 datos en voz alta, por turnos. Cuando todos hayáis hablado, tocad el nombre de cada jugador para sumarle un voto según lo que decidáis en grupo.</p>
+        <p class="discussion-help">Cada jugador lee su dato en voz alta, por turnos. Cuando todos hayáis hablado, tocad el nombre de cada jugador para sumarle un voto según lo que decidáis en grupo.</p>
         <div class="vote-buttons" id="vote-buttons"></div>
         <button type="button" id="btn-reveal" class="btn btn-primary btn-large">Revelar mentiroso(s)</button>
       </div>
@@ -149,8 +149,8 @@
         <p class="results-label">Tema</p>
         <p class="results-word" id="results-topic">—</p>
 
-        <p class="results-label">Los datos verdaderos eran</p>
-        <ol class="results-facts" id="results-facts"></ol>
+        <p class="results-label">Quién tenía qué dato</p>
+        <ul class="results-facts" id="results-facts"></ul>
 
         <p class="results-label">El/los mentiroso(s) eran</p>
         <ul class="results-impostors" id="results-liars"></ul>
@@ -170,11 +170,11 @@
     <h2>Cómo jugar</h2>
     <ol class="how-to-list">
       <li><strong>Prepara la partida.</strong> Elige jugadores (3 a 10), mentirosos y categoría de temas.</li>
-      <li><strong>Reparte los datos.</strong> El móvil se pasa de jugador en jugador. Cada persona ve en privado 4 datos sobre el tema elegido.</li>
-      <li><strong>El mentiroso no sabe que lo es.</strong> A los mentirosos se les cambia uno de sus 4 datos por uno falso, sin ninguna pista de cuál es.</li>
-      <li><strong>Lectura en voz alta.</strong> Cada jugador lee sus datos, por turnos, sin decir si cree que alguno es falso.</li>
+      <li><strong>Reparte los datos.</strong> El móvil se pasa de jugador en jugador. Cada persona ve en privado un único dato sobre el tema elegido, distinto al de los demás.</li>
+      <li><strong>El mentiroso no sabe que lo es.</strong> A los mentirosos les toca un dato falso en vez de uno verdadero, sin ninguna pista de que lo es.</li>
+      <li><strong>Lectura en voz alta.</strong> Cada jugador lee su dato, por turnos, sin decir si cree que es falso.</li>
       <li><strong>Debate y votación.</strong> El grupo comenta lo que ha oído y vota quién cree que tiene el dato falso.</li>
-      <li><strong>Revelación.</strong> Se muestran los datos verdaderos, quién era el mentiroso y si acertasteis la votación.</li>
+      <li><strong>Revelación.</strong> Se muestra qué dato tenía cada jugador, quién mentía y si acertasteis la votación.</li>
     </ol>
   </section>
 
@@ -182,11 +182,11 @@
     <h2>Preguntas frecuentes</h2>
     <div class="faq-item">
       <h3>¿Cómo se juega a El Dato Falso?</h3>
-      <p>Se elige un tema (un animal, un país, un famoso, una comida). Casi todos los jugadores ven los mismos 4 datos verdaderos sobre ese tema; a los mentirosos se les cambia uno de esos datos por uno falso, sin decírselo. Cada jugador lee sus datos en voz alta y el grupo vota quién cree que tiene el dato falso.</p>
+      <p>Se elige un tema (un animal, un país, un famoso, una comida). Cada jugador recibe un único dato sobre ese tema, distinto al de los demás; casi todos son ciertos, pero los mentirosos reciben uno falso, sin decírselo. Cada jugador lee su dato en voz alta y el grupo vota quién cree que tiene el dato falso.</p>
     </div>
     <div class="faq-item">
       <h3>¿El mentiroso sabe que tiene un dato falso?</h3>
-      <p>No. Ve sus 4 datos como si fueran todos ciertos, así que los lee con total naturalidad. El grupo tiene que detectar el dato falso usando su propio conocimiento general.</p>
+      <p>No. Ve su dato como si fuera cierto, así que lo lee con total naturalidad. El grupo tiene que detectar el dato falso usando su propio conocimiento general.</p>
     </div>
     <div class="faq-item">
       <h3>¿Es gratis?</h3>

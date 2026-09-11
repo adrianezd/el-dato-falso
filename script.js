@@ -2,11 +2,11 @@
 
 /* =========================================================================
    EL DATO FALSO — lógica del juego
-   Se elige un tema; casi todos los jugadores reciben sus 4 datos
-   verdaderos, pero los "mentirosos" reciben la misma lista con UN dato
-   sustituido por uno falso, sin saberlo ellos mismos. Cada uno lee sus
-   datos en voz alta y el grupo vota quién cree que tiene el dato falso.
-   Estado solo en memoria, nunca en localStorage salvo los ajustes.
+   Se elige un tema; cada jugador recibe UN único dato, distinto al de
+   los demás. Los no mentirosos reciben un dato verdadero, los
+   "mentirosos" reciben un dato falso sin saberlo ellos mismos. Cada uno
+   lee su dato en voz alta y el grupo vota quién cree que tiene el dato
+   falso. Estado solo en memoria, nunca en localStorage salvo los ajustes.
    ========================================================================= */
 
 const MIN_PLAYERS = 3;
@@ -59,14 +59,19 @@ function pickTopicForCategory(categoryKey) {
   return { topic, topicKey, categoryLabel: TOPIC_CATEGORIES[realKey].label };
 }
 
-// Genera la tarjeta de datos de un jugador: si es mentiroso, sustituye UNO
-// de los 4 datos verdaderos (elegido al azar) por un dato falso al azar.
-function buildFactCard(topic, isLiar) {
-  const facts = topic.verdaderos.slice();
-  if (isLiar && topic.falsos.length > 0) {
-    const swapIndex = Math.floor(Math.random() * facts.length);
-    const falseFact = topic.falsos[Math.floor(Math.random() * topic.falsos.length)];
-    facts[swapIndex] = falseFact;
+// Reparte UN dato por jugador: a los no mentirosos les toca un dato
+// verdadero distinto a cada uno, a los mentirosos un dato falso distinto
+// a cada uno. Nadie repite dato con otro jugador.
+function assignFacts(topic, playerCount, liarIndices) {
+  const liarCount = liarIndices.size;
+  const truthCount = playerCount - liarCount;
+  const trueFacts = shuffled(topic.verdaderos).slice(0, truthCount);
+  const falseFacts = shuffled(topic.falsos).slice(0, liarCount);
+  const facts = new Array(playerCount);
+  let ti = 0;
+  let fi = 0;
+  for (let i = 0; i < playerCount; i++) {
+    facts[i] = liarIndices.has(i) ? falseFacts[fi++] : trueFacts[ti++];
   }
   return facts;
 }
@@ -205,11 +210,9 @@ function renderRevealForCurrentPlayer() {
 }
 
 function populateRoleContent() {
-  const facts = round.cards[round.currentIndex];
+  const fact = round.facts[round.currentIndex];
   el.roleCategoryLabel.textContent = `Tema: ${round.topic.emoji} ${round.topic.nombre}`;
-  el.roleContent.innerHTML = '<ol class="fact-list">' +
-    facts.map((f) => `<li>${f}</li>`).join('') +
-    '</ol>';
+  el.roleContent.innerHTML = `<p class="fact-single">${fact}</p>`;
 }
 
 function startRevealHold(evt) {
@@ -275,7 +278,10 @@ function endRound() {
   if (!round) return;
 
   el.resultsTopic.innerHTML = `${round.topic.emoji} ${round.topic.nombre}`;
-  el.resultsFacts.innerHTML = round.topic.verdaderos.map((f) => `<li>${f}</li>`).join('');
+  el.resultsFacts.innerHTML = round.facts.map((f, i) => {
+    const isLiar = round.liarIndices.has(i);
+    return `<li class="${isLiar ? 'is-false' : 'is-true'}">Jugador ${i + 1}: ${f}</li>`;
+  }).join('');
 
   const liarNumbers = Array.from(round.liarIndices).map((i) => i + 1).sort((a, b) => a - b);
   el.resultsLiars.innerHTML = '';
@@ -305,16 +311,13 @@ function endRound() {
 function startNewRound() {
   const picked = pickTopicForCategory(settings.categoryKey);
   const liarIndices = pickLiarIndices(settings.playerCount, settings.liarCount);
-  const cards = [];
-  for (let i = 0; i < settings.playerCount; i++) {
-    cards.push(buildFactCard(picked.topic, liarIndices.has(i)));
-  }
+  const facts = assignFacts(picked.topic, settings.playerCount, liarIndices);
   round = {
     topic: picked.topic,
     topicKey: picked.topicKey,
     categoryLabel: picked.categoryLabel,
     liarIndices,
-    cards,
+    facts,
     currentIndex: 0,
     hasRevealedCurrent: false,
     votes: []

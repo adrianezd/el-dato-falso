@@ -9,10 +9,10 @@ Juego de fiesta de trivia para grupos, hecho con HTML, CSS y JavaScript puros (s
 ## Cómo jugar
 
 1. Elige jugadores (3-10), mentirosos y categoría de temas.
-2. Se elige un tema (animal, país, famoso o comida). Casi todos ven los mismos 4 datos verdaderos; a los mentirosos se les cambia uno por un dato falso, sin saberlo.
-3. Cada jugador lee sus datos en voz alta, por turnos.
+2. Se elige un tema (animal, país, famoso o comida). Cada jugador recibe un único dato distinto sobre ese tema; casi todos son ciertos, pero los mentirosos reciben uno falso, sin saberlo.
+3. Cada jugador lee su dato en voz alta, por turnos.
 4. El grupo debate y vota quién cree que tiene el dato falso.
-5. Revelación: se muestran los datos verdaderos, quién mentía y si acertasteis.
+5. Revelación: se muestra qué dato tenía cada jugador, quién mentía y si acertasteis.
 
 ## Transparencia sobre los datos
 
