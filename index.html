@@ -4,27 +4,33 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>El Dato Falso — juego de fiesta de trivia y mentirosos, gratis</title>
-<meta name="description" content="Juego de fiesta gratis, sin descargar ninguna app. Cada jugador recibe un dato distinto sobre un tema: casi todos son ciertos, pero los mentirosos tienen uno falso sin saberlo. Adivinad quién tiene el dato falso. Un solo móvil compartido.">
-<meta name="keywords" content="juego de fiesta, juego de trivia, juego del mentiroso, juego para grupos, juego de móvil para fiestas, juego sin descargar app, juegos para reuniones, verdad o mentira">
+<meta name="description" content="Juego de fiesta de trivia gratis y sin descargas. Cada jugador recibe un dato distinto sobre un tema; a los mentirosos se les cuela uno falso. 45 temas, casi 600 datos, 3 modos (clásico, mentiroso consciente y verdadero o falso), votación secreta y marcador.">
+<meta name="keywords" content="juego de fiesta, juego de trivia, verdadero o falso, juego del mentiroso, juego para grupos, juego de móvil para fiestas, juego sin descargar app, juegos para reuniones, dos verdades y una mentira, curiosidades">
 <link rel="canonical" href="https://adrianezd.github.io/el-dato-falso/">
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="apple-touch-icon" href="icon-512.png">
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#101820">
+<meta name="theme-color" content="#08111a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
 <meta property="og:title" content="El Dato Falso — juego de fiesta de trivia y mentirosos">
-<meta property="og:description" content="Cada jugador recibe un dato distinto sobre un tema; los mentirosos tienen uno falso sin saberlo. Adivinad quién miente. Gratis, un solo móvil, sin descargas.">
+<meta property="og:description" content="Cada jugador recibe un dato distinto; a los mentirosos se les cuela uno falso. 45 temas, 3 modos, votación secreta y marcador. Gratis, un solo móvil.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://adrianezd.github.io/el-dato-falso/">
-<meta property="og:image" content="https://adrianezd.github.io/el-dato-falso/favicon.svg">
+<meta property="og:image" content="https://adrianezd.github.io/el-dato-falso/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:locale" content="es_ES">
 
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="El Dato Falso">
-<meta name="twitter:description" content="Cada jugador tiene un dato distinto; los mentirosos tienen uno falso sin saberlo. Juego de fiesta gratis, un solo móvil.">
-<meta name="twitter:image" content="https://adrianezd.github.io/el-dato-falso/favicon.svg">
+<meta name="twitter:description" content="Cada jugador tiene un dato distinto; los mentirosos tienen uno falso. Juego de fiesta gratis, un solo móvil.">
+<meta name="twitter:image" content="https://adrianezd.github.io/el-dato-falso/og-image.png">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 
 <script type="application/ld+json">
@@ -34,11 +40,12 @@
     {
       "@type": "Game",
       "name": "El Dato Falso",
-      "description": "Juego de fiesta de trivia para grupos, un solo móvil compartido. Se elige un tema y cada jugador recibe un dato distinto sobre él; casi todos son ciertos, pero los mentirosos reciben uno falso sin saberlo. Cada jugador lee su dato en voz alta y el grupo vota quién tiene el dato falso.",
-      "genre": ["Juego de fiesta", "Juego de trivia", "Juego social"],
+      "description": "Juego de fiesta de trivia para grupos con un solo móvil. Cada jugador recibe en privado un dato sobre un tema; los mentirosos reciben uno falso. Incluye un modo rápido de verdadero o falso.",
+      "genre": ["Juego de fiesta", "Trivia", "Juego social"],
       "applicationCategory": "Game",
       "gamePlatform": "Web Browser",
       "url": "https://adrianezd.github.io/el-dato-falso/",
+      "image": "https://adrianezd.github.io/el-dato-falso/og-image.png",
       "inLanguage": "es",
       "isAccessibleForFree": true,
       "numberOfPlayers": { "@type": "QuantitativeValue", "minValue": 3, "maxValue": 10 },
@@ -47,26 +54,10 @@
     {
       "@type": "FAQPage",
       "mainEntity": [
-        {
-          "@type": "Question",
-          "name": "¿Cómo se juega a El Dato Falso?",
-          "acceptedAnswer": { "@type": "Answer", "text": "Se elige un tema (un animal, un país, un famoso, una comida). Cada jugador recibe un único dato distinto sobre ese tema: casi todos son ciertos, pero los mentirosos reciben un dato falso, sin decírselo. Cada jugador lee su dato en voz alta y el grupo vota quién cree que tiene el dato falso." }
-        },
-        {
-          "@type": "Question",
-          "name": "¿El mentiroso sabe que tiene un dato falso?",
-          "acceptedAnswer": { "@type": "Answer", "text": "No. Ve su dato como si fuera cierto, así que lo lee con total naturalidad. El grupo tiene que detectar el dato falso usando su propio conocimiento general." }
-        },
-        {
-          "@type": "Question",
-          "name": "¿Es gratis?",
-          "acceptedAnswer": { "@type": "Answer", "text": "Sí, completamente gratis, sin anuncios ni descargas." }
-        },
-        {
-          "@type": "Question",
-          "name": "¿Necesitamos varios móviles?",
-          "acceptedAnswer": { "@type": "Answer", "text": "No, con un solo móvil compartido es suficiente: se va pasando de jugador en jugador." }
-        }
+        { "@type": "Question", "name": "¿Cómo se juega a El Dato Falso?", "acceptedAnswer": { "@type": "Answer", "text": "Se elige un tema. Cada jugador recibe un único dato sobre ese tema, distinto al de los demás; casi todos son ciertos, pero los mentirosos reciben uno falso. Cada jugador lee su dato en voz alta y el grupo vota quién cree que tiene el dato falso." } },
+        { "@type": "Question", "name": "¿El mentiroso sabe que tiene un dato falso?", "acceptedAnswer": { "@type": "Answer", "text": "En el modo Clásico no: lo lee con total naturalidad. En el modo Mentiroso consciente sí lo sabe y tiene que defenderlo." } },
+        { "@type": "Question", "name": "¿Qué es el modo Verdadero o falso?", "acceptedAnswer": { "@type": "Answer", "text": "Un quiz rápido para todo el grupo: el móvil muestra un dato, cada uno dice si cree que es verdadero o falso, se revela y se suman puntos a quien acertó." } },
+        { "@type": "Question", "name": "¿Es gratis?", "acceptedAnswer": { "@type": "Answer", "text": "Sí, completamente gratis, sin anuncios ni descargas." } }
       ]
     }
   ]
@@ -75,136 +66,292 @@
 </head>
 <body>
 
-<header class="site-header">
+<header class="site-header hide-in-game">
+  <div class="hero-badge" aria-hidden="true">🤥</div>
   <p class="site-kicker">Juego de fiesta · 1 móvil compartido</p>
   <h1>El Dato Falso</h1>
-  <p class="tagline">Cada uno tiene un dato distinto... salvo quien miente sin saberlo.</p>
+  <p class="tagline">Cada uno tiene un dato curioso distinto… pero a alguien se le ha colado una mentira.</p>
+  <ul class="hero-chips">
+    <li>👥 3–10 jugadores</li>
+    <li>🎲 3 modos</li>
+    <li>🧠 45 temas</li>
+    <li>📴 Sin internet</li>
+  </ul>
 </header>
+
+<div class="game-bar" id="game-bar" hidden>
+  <span class="game-bar-title" id="game-bar-title">Ronda 1</span>
+  <button type="button" class="btn-icon" id="btn-exit">✕ Salir</button>
+</div>
 
 <main>
 
   <div id="game-app">
 
+    <!-- ============================= SETUP ============================= -->
     <section class="screen" data-screen="setup">
       <h2 class="visually-hidden">Preparar partida</h2>
 
-      <div class="setup-block">
-        <label class="setup-label" id="player-count-label">Número de jugadores</label>
-        <div class="stepper" role="group" aria-labelledby="player-count-label">
-          <button type="button" id="btn-player-minus" class="stepper-btn" aria-label="Restar jugador">−</button>
-          <span class="stepper-value" id="player-count-value">4</span>
-          <button type="button" id="btn-player-plus" class="stepper-btn" aria-label="Sumar jugador">+</button>
+      <div class="card">
+        <h3 class="card-title">🎲 Modo de juego</h3>
+        <div class="mode-grid mode-grid-3" id="mode-options" role="radiogroup" aria-label="Modo de juego"></div>
+      </div>
+
+      <div class="card">
+        <h3 class="card-title">👥 Jugadores</h3>
+        <div class="stepper-row">
+          <span class="stepper-label" id="player-count-label">Jugadores</span>
+          <div class="stepper" role="group" aria-labelledby="player-count-label">
+            <button type="button" id="btn-player-minus" class="stepper-btn" aria-label="Restar jugador">−</button>
+            <span class="stepper-value" id="player-count-value" aria-live="polite">4</span>
+            <button type="button" id="btn-player-plus" class="stepper-btn" aria-label="Sumar jugador">+</button>
+          </div>
         </div>
-      </div>
-
-      <div class="setup-block">
-        <label class="setup-label" id="liar-count-label">Número de mentirosos</label>
-        <div class="stepper" role="group" aria-labelledby="liar-count-label">
-          <button type="button" id="btn-liar-minus" class="stepper-btn" aria-label="Restar mentiroso">−</button>
-          <span class="stepper-value" id="liar-count-value">1</span>
-          <button type="button" id="btn-liar-plus" class="stepper-btn" aria-label="Sumar mentiroso">+</button>
+        <div class="stepper-row" id="liar-row">
+          <span class="stepper-label" id="liar-count-label">Mentirosos <small id="liar-hint">Máximo 1 para 4 jugadores</small></span>
+          <div class="stepper" role="group" aria-labelledby="liar-count-label">
+            <button type="button" id="btn-liar-minus" class="stepper-btn" aria-label="Restar mentiroso">−</button>
+            <span class="stepper-value" id="liar-count-value" aria-live="polite">1</span>
+            <button type="button" id="btn-liar-plus" class="stepper-btn" aria-label="Sumar mentiroso">+</button>
+          </div>
         </div>
-        <p class="setup-hint" id="liar-hint">Máximo 1 para 4 jugadores</p>
+        <div class="stepper-row" id="quiz-length-row">
+          <span class="stepper-label" id="quiz-length-label">Datos por partida <small>Cada uno: ¿verdadero o falso?</small></span>
+          <div class="stepper" role="group" aria-labelledby="quiz-length-label">
+            <button type="button" id="btn-quiz-minus" class="stepper-btn" aria-label="Menos datos">−</button>
+            <span class="stepper-value" id="quiz-length-value" aria-live="polite">10</span>
+            <button type="button" id="btn-quiz-plus" class="stepper-btn" aria-label="Más datos">+</button>
+          </div>
+        </div>
+        <details class="fold">
+          <summary>✏️ Nombres de los jugadores <small>(opcional)</small></summary>
+          <div class="names-grid" id="names-grid"></div>
+          <button type="button" class="mini-btn" id="btn-shuffle-names">🔀 Mezclar el orden</button>
+        </details>
       </div>
 
-      <div class="setup-block">
-        <span class="setup-label" id="category-label">Categoría de temas</span>
-        <div class="category-options" id="category-options" role="radiogroup" aria-labelledby="category-label"></div>
+      <div class="card">
+        <h3 class="card-title">🗂️ Categorías <span class="card-aside" id="category-summary"></span></h3>
+        <div class="mini-actions">
+          <button type="button" class="mini-btn" id="btn-cat-all">Todas</button>
+          <button type="button" class="mini-btn" id="btn-cat-none">Ninguna</button>
+        </div>
+        <div class="category-grid" id="category-options" role="group" aria-label="Categorías de temas"></div>
+        <p class="setup-hint is-warning" id="category-warning" hidden>Elige al menos una categoría.</p>
       </div>
 
-      <button type="button" id="btn-start-game" class="btn btn-primary btn-large">Crear sala</button>
+      <div class="card">
+        <h3 class="card-title">⚙️ Opciones</h3>
+        <div class="stepper-row" id="timer-row">
+          <span class="stepper-label" id="timer-label">Tiempo de debate <small id="timer-hint">Con cronómetro</small></span>
+          <div class="stepper" role="group" aria-labelledby="timer-label">
+            <button type="button" id="btn-time-minus" class="stepper-btn" aria-label="Menos tiempo">−</button>
+            <span class="stepper-value" id="time-value" aria-live="polite">2′</span>
+            <button type="button" id="btn-time-plus" class="stepper-btn" aria-label="Más tiempo">+</button>
+          </div>
+        </div>
+        <label class="switch-row" id="secret-vote-row">
+          <span>Votación secreta <small>Cada uno vota en privado en el móvil</small></span>
+          <input type="checkbox" class="switch" id="opt-secret-vote">
+        </label>
+        <label class="switch-row">
+          <span>Sonido</span>
+          <input type="checkbox" class="switch" id="opt-sound">
+        </label>
+        <label class="switch-row">
+          <span>Vibración</span>
+          <input type="checkbox" class="switch" id="opt-vibrate">
+        </label>
+      </div>
+
+      <p class="scoreline" id="setup-scoreline" hidden>
+        <span id="setup-score-text">🏆 Marcador en curso</span>
+        <button type="button" class="mini-btn" id="btn-reset-scores">Reiniciar</button>
+      </p>
+
+      <button type="button" id="btn-start-game" class="btn btn-primary btn-large btn-start">¡Repartir datos! 🎲</button>
     </section>
 
+    <!-- ============================= REVEAL ============================= -->
     <section class="screen" data-screen="reveal" hidden>
-      <div class="reveal-wrap">
-        <p class="reveal-progress" id="reveal-progress">Jugador 1 de 4</p>
-        <h2 class="reveal-player-label" id="reveal-player-label">Pasa el móvil a Jugador 1</h2>
-        <p class="reveal-warning">Solo esta persona debe mirar la pantalla</p>
+      <div class="center-wrap">
+        <ol class="progress-dots" id="reveal-dots" aria-hidden="true"></ol>
+        <p class="reveal-pass">Pasa el móvil a</p>
+        <h2 class="reveal-player" id="reveal-player">Jugador 1</h2>
+        <p class="reveal-warning">🤫 Que nadie más mire la pantalla</p>
 
-        <button type="button" id="hold-reveal-btn" class="hold-button" aria-describedby="hold-prompt">
-          <span id="hold-prompt">Mantén pulsado<br>para ver tus datos</span>
-          <div id="role-panel" class="role-panel" hidden>
-            <span id="role-category-label" class="role-category-label"></span>
-            <div id="role-content" class="role-content"></div>
-          </div>
+        <button type="button" id="hold-reveal-btn" class="hold-card" aria-describedby="hold-prompt">
+          <span class="hold-inner">
+            <span class="hold-face hold-front">
+              <span class="hold-icon" aria-hidden="true">👆</span>
+              <span class="hold-prompt" id="hold-prompt">Mantén pulsado para ver tu dato</span>
+              <span class="hold-sub">Memorízalo y suelta</span>
+            </span>
+            <span class="hold-face hold-back" id="role-panel">
+              <span class="role-category-label" id="role-category-label"></span>
+              <span class="role-emoji" id="role-emoji" aria-hidden="true"></span>
+              <span class="fact-text" id="role-content"></span>
+              <span class="fact-warning" id="role-extra"></span>
+            </span>
+          </span>
         </button>
 
         <button type="button" id="btn-next-player" class="btn btn-secondary btn-large" disabled>Ya lo vi, pasar al siguiente</button>
       </div>
     </section>
 
-    <section class="screen" data-screen="vote" hidden>
-      <div class="discussion-wrap">
-        <h2>¿Quién tiene el dato falso?</h2>
-        <p class="discussion-help">Cada jugador lee su dato en voz alta, por turnos. Cuando todos hayáis hablado, tocad el nombre de cada jugador para sumarle un voto según lo que decidáis en grupo.</p>
-        <div class="vote-buttons" id="vote-buttons"></div>
-        <button type="button" id="btn-reveal" class="btn btn-primary btn-large">Revelar mentiroso(s)</button>
+    <!-- =========================== DISCUSSION ============================ -->
+    <section class="screen" data-screen="discussion" hidden>
+      <div class="center-wrap">
+        <h2 class="screen-title" id="discussion-title">Tema: —</h2>
+        <div class="starter-card">
+          <span class="starter-emoji" aria-hidden="true">🎲</span>
+          <div>
+            <p>Empieza leyendo su dato</p>
+            <strong id="starter-name">Jugador 1</strong>
+            <p>y seguid en orden. ¡Sin mirar el móvil!</p>
+          </div>
+        </div>
+        <p class="screen-help" id="discussion-help">Leed vuestro dato en voz alta, preguntad, dudad… ¿Cuál suena a mentira?</p>
+
+        <div class="timer-block" id="timer-block">
+          <div class="timer-ring">
+            <svg viewBox="0 0 120 120" aria-hidden="true">
+              <defs>
+                <linearGradient id="ring-gradient" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stop-color="var(--accent)"/>
+                  <stop offset="100%" stop-color="var(--accent-2)"/>
+                </linearGradient>
+              </defs>
+              <circle class="ring-bg" cx="60" cy="60" r="54"/>
+              <circle class="ring-fg" id="timer-ring" cx="60" cy="60" r="54"/>
+            </svg>
+            <span class="timer-display" id="timer-display" role="timer">02:00</span>
+          </div>
+          <div class="timer-controls">
+            <button type="button" id="btn-timer-minus" class="btn btn-ghost" aria-label="Restar 30 segundos">−30s</button>
+            <button type="button" id="btn-timer-toggle" class="btn btn-ghost">Pausar</button>
+            <button type="button" id="btn-timer-plus" class="btn btn-ghost" aria-label="Sumar 30 segundos">+30s</button>
+          </div>
+        </div>
+
+        <button type="button" id="btn-go-vote" class="btn btn-primary btn-large">Votar 🗳️</button>
       </div>
     </section>
 
+    <!-- ============================== VOTE =============================== -->
+    <section class="screen" data-screen="vote" hidden>
+      <div class="center-wrap">
+        <h2 class="screen-title">¿Quién tiene el dato falso?</h2>
+        <div class="vote-area" id="vote-area"></div>
+      </div>
+    </section>
+
+    <!-- ============================== QUIZ =============================== -->
+    <section class="screen" data-screen="quiz" hidden>
+      <div class="center-wrap">
+        <p class="vote-progress" id="quiz-progress">Dato 1 de 10</p>
+        <h2 class="screen-title">¿Verdadero o falso?</h2>
+        <div class="card quiz-card" id="quiz-card">
+          <p class="quiz-topic" id="quiz-topic">—</p>
+          <p class="fact-text" id="quiz-fact">—</p>
+          <p class="quiz-answer" id="quiz-answer" hidden></p>
+        </div>
+        <p class="screen-help" id="quiz-help">Cada uno dice en voz alta (o con el pulgar 👍 / 👎) si cree que es verdadero o falso.</p>
+        <div class="quiz-who" id="quiz-who" hidden>
+          <p>¿Quién acertó? Tocad sus nombres.</p>
+          <div class="category-grid" id="quiz-players"></div>
+        </div>
+        <button type="button" id="btn-quiz-reveal" class="btn btn-primary btn-large">Revelar 👀</button>
+        <button type="button" id="btn-quiz-next" class="btn btn-primary btn-large" hidden>Siguiente dato ▶</button>
+      </div>
+    </section>
+
+    <!-- ============================= RESULTS ============================= -->
     <section class="screen" data-screen="results" hidden>
-      <div class="results-wrap">
-        <h2>Resultados de la ronda</h2>
+      <div class="center-wrap">
+        <div class="verdict" id="verdict">
+          <span class="verdict-emoji" id="verdict-emoji" aria-hidden="true">🤥</span>
+          <h2 class="verdict-title" id="verdict-title">Resultado</h2>
+          <p class="verdict-text" id="verdict-text"></p>
+        </div>
 
-        <p class="results-label">Tema</p>
-        <p class="results-word" id="results-topic">—</p>
+        <div class="card reveal-box" id="reveal-box" hidden>
+          <p class="results-label">Tema</p>
+          <p class="results-word" id="results-topic">—</p>
+          <p class="results-label">Quién tenía qué dato</p>
+          <ul class="results-facts" id="results-facts"></ul>
+          <p class="vote-summary" id="vote-summary"></p>
+        </div>
 
-        <p class="results-label">Quién tenía qué dato</p>
-        <ul class="results-facts" id="results-facts"></ul>
-
-        <p class="results-label">El/los mentiroso(s) eran</p>
-        <ul class="results-impostors" id="results-liars"></ul>
-
-        <p class="results-category" id="results-votes"></p>
+        <div class="card scoreboard" id="scoreboard-card" hidden>
+          <h3 class="card-title">🏆 Marcador</h3>
+          <ol class="score-list" id="scoreboard"></ol>
+        </div>
 
         <div class="results-actions">
-          <button type="button" id="btn-play-again" class="btn btn-primary btn-large">Jugar otra ronda</button>
-          <button type="button" id="btn-new-game" class="btn btn-secondary btn-large">Nueva partida</button>
+          <button type="button" id="btn-play-again" class="btn btn-primary btn-large">Siguiente ronda ▶</button>
+          <button type="button" id="btn-new-game" class="btn btn-secondary btn-large">Cambiar ajustes</button>
         </div>
       </div>
     </section>
 
   </div>
 
-  <section class="info-section" id="como-jugar">
+  <section class="info-section hide-in-game" id="como-jugar">
     <h2>Cómo jugar</h2>
     <ol class="how-to-list">
-      <li><strong>Prepara la partida.</strong> Elige jugadores (3 a 10), mentirosos y categoría de temas.</li>
-      <li><strong>Reparte los datos.</strong> El móvil se pasa de jugador en jugador. Cada persona ve en privado un único dato sobre el tema elegido, distinto al de los demás.</li>
-      <li><strong>El mentiroso no sabe que lo es.</strong> A los mentirosos les toca un dato falso en vez de uno verdadero, sin ninguna pista de que lo es.</li>
-      <li><strong>Lectura en voz alta.</strong> Cada jugador lee su dato, por turnos, sin decir si cree que es falso.</li>
-      <li><strong>Debate y votación.</strong> El grupo comenta lo que ha oído y vota quién cree que tiene el dato falso.</li>
-      <li><strong>Revelación.</strong> Se muestra qué dato tenía cada jugador, quién mentía y si acertasteis la votación.</li>
+      <li><strong>Prepara la partida.</strong> Elige modo, jugadores (3 a 10), mentirosos y categorías.</li>
+      <li><strong>Reparte los datos.</strong> Pasad el móvil: cada persona ve en privado un único dato sobre el tema de la ronda, distinto al de los demás.</li>
+      <li><strong>Al mentiroso se le cuela uno falso.</strong> En el modo Clásico ni siquiera lo sabe; en el modo Mentiroso consciente, sí.</li>
+      <li><strong>Lectura y debate.</strong> Por turnos, cada uno lee su dato en voz alta. Discutid con el cronómetro en marcha.</li>
+      <li><strong>Votación.</strong> A mano alzada o en secreto en el móvil. Si pilláis a todos los mentirosos, el grupo gana puntos; si no, los mentirosos.</li>
+      <li><strong>Revelación.</strong> Se muestra qué dato tenía cada uno y cuál era falso. ¡Siempre se aprende algo!</li>
     </ol>
   </section>
 
-  <section class="info-section" id="faq">
+  <section class="info-section hide-in-game" id="modos">
+    <h2>Modos de juego</h2>
+    <ul class="feature-grid">
+      <li><strong>🙈 Clásico</strong>Los mentirosos no saben que su dato es falso. Lo leen con total naturalidad, así que toca tirar de cultura general.</li>
+      <li><strong>😏 Mentiroso consciente</strong>Los mentirosos saben que su dato es falso y tienen que defenderlo con aplomo para que no les pillen.</li>
+      <li><strong>⚡ Verdadero o falso</strong>Quiz rápido para todo el grupo: un dato en pantalla, cada uno opina, se revela y suma puntos quien acierta.</li>
+    </ul>
+  </section>
+
+  <section class="info-section hide-in-game" id="categorias">
+    <h2>Categorías</h2>
+    <p>45 temas con casi 600 datos (verdaderos y falsos) en 10 categorías.</p>
+    <ul class="tag-cloud">
+      <li>🐾 Animales</li><li>⭐ Famosos</li><li>🌍 Países</li><li>🍕 Comida</li><li>🚀 Espacio</li>
+      <li>🫀 Cuerpo humano</li><li>🏛️ Historia</li><li>🔬 Ciencia y naturaleza</li><li>⚽ Deportes y juegos</li><li>💡 Inventos</li>
+    </ul>
+  </section>
+
+  <section class="info-section hide-in-game" id="faq">
     <h2>Preguntas frecuentes</h2>
-    <div class="faq-item">
-      <h3>¿Cómo se juega a El Dato Falso?</h3>
-      <p>Se elige un tema (un animal, un país, un famoso, una comida). Cada jugador recibe un único dato sobre ese tema, distinto al de los demás; casi todos son ciertos, pero los mentirosos reciben uno falso, sin decírselo. Cada jugador lee su dato en voz alta y el grupo vota quién cree que tiene el dato falso.</p>
-    </div>
-    <div class="faq-item">
-      <h3>¿El mentiroso sabe que tiene un dato falso?</h3>
-      <p>No. Ve su dato como si fuera cierto, así que lo lee con total naturalidad. El grupo tiene que detectar el dato falso usando su propio conocimiento general.</p>
-    </div>
-    <div class="faq-item">
-      <h3>¿Es gratis?</h3>
-      <p>Sí, completamente gratis, sin anuncios ni descargas.</p>
-    </div>
-    <div class="faq-item">
-      <h3>¿Necesitamos varios móviles?</h3>
-      <p>No, con un solo móvil compartido es suficiente: se va pasando de jugador en jugador.</p>
-    </div>
+    <details class="faq-item"><summary>¿Cómo se juega a El Dato Falso?</summary><p>Se elige un tema. Cada jugador recibe un único dato sobre ese tema, distinto al de los demás; casi todos son ciertos, pero los mentirosos reciben uno falso. Cada jugador lee su dato en voz alta y el grupo vota quién cree que tiene el dato falso.</p></details>
+    <details class="faq-item"><summary>¿El mentiroso sabe que tiene un dato falso?</summary><p>En el modo Clásico no: lo lee con total naturalidad. En el modo Mentiroso consciente sí lo sabe y tiene que defenderlo.</p></details>
+    <details class="faq-item"><summary>¿Qué es el modo Verdadero o falso?</summary><p>Un quiz rápido para todo el grupo: el móvil muestra un dato, cada uno dice si cree que es verdadero o falso, se revela y se suma un punto a quien acertó.</p></details>
+    <details class="faq-item"><summary>¿Cómo funciona la puntuación?</summary><p>Si el grupo vota a todos los mentirosos, cada jugador con dato verdadero gana 1 punto. Si algún mentiroso se libra, cada mentiroso gana 2 puntos.</p></details>
+    <details class="faq-item"><summary>¿Es gratis?</summary><p>Sí, completamente gratis, sin anuncios ni descargas.</p></details>
+    <details class="faq-item"><summary>¿Necesitamos varios móviles?</summary><p>No, con un solo móvil compartido es suficiente: se va pasando de jugador en jugador.</p></details>
   </section>
 
 </main>
 
-<footer class="site-footer">
+<footer class="site-footer hide-in-game">
+  <nav class="more-games" aria-label="Más juegos de fiesta">
+    <h2>Más juegos de fiesta</h2>
+    <a class="game-link" href="https://adrianezd.github.io/quien-es-el-impostor/"><span class="game-link-emoji" aria-hidden="true">🕵️</span><span><strong>¿Quién es el Impostor?</strong><span>Todos saben la palabra secreta menos uno.</span></span></a>
+    <a class="game-link" href="https://adrianezd.github.io/dibujo-impostor/"><span class="game-link-emoji" aria-hidden="true">✏️</span><span><strong>Dibujo Impostor</strong><span>Todos dibujan lo mismo salvo el impostor, que no sabe que lo es.</span></span></a>
+    <a class="game-link is-current" href="https://adrianezd.github.io/el-dato-falso/" aria-current="page"><span class="game-link-emoji" aria-hidden="true">🤥</span><span><strong>El Dato Falso</strong><span>Trivia en la que a los mentirosos se les cuela un dato falso.</span></span></a>
+  </nav>
   <p>El Dato Falso es un juego de fiesta original de trivia general, no afiliado a ninguna marca comercial.</p>
   <p>Hecho para jugar en cualquier móvil, sin cuentas ni descargas.</p>
 </footer>
 
+<script src="kit.js"></script>
 <script src="data.js"></script>
 <script src="script.js"></script>
 </body>
