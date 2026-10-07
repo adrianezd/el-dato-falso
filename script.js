@@ -2,370 +2,617 @@
 
 /* =========================================================================
    EL DATO FALSO — lógica del juego
-   Se elige un tema; cada jugador recibe UN único dato, distinto al de
-   los demás. Los no mentirosos reciben un dato verdadero, los
-   "mentirosos" reciben un dato falso sin saberlo ellos mismos. Cada uno
-   lee su dato en voz alta y el grupo vota quién cree que tiene el dato
-   falso. Estado solo en memoria, nunca en localStorage salvo los ajustes.
+   Modos:
+    - Clásico: cada jugador recibe UN dato sobre el tema; los mentirosos
+      reciben uno falso sin saberlo.
+    - Mentiroso consciente: igual, pero el mentiroso sabe que su dato es
+      falso y tiene que defenderlo.
+    - Verdadero o falso: quiz rápido para todo el grupo.
+   Estado de la ronda solo en memoria; en localStorage solo los ajustes.
    ========================================================================= */
 
 const MIN_PLAYERS = 3;
 const MAX_PLAYERS = 10;
-const SETTINGS_KEY = 'el-dato-falso-settings-v1';
+const TIMER_OPTIONS = [0, 1, 2, 3, 4, 5]; // minutos (0 = sin cronómetro)
+const QUIZ_OPTIONS = [5, 10, 15, 20, 30];
+const TIMER_STEP = 30;
+const SETTINGS_KEY = 'el-dato-falso-settings-v2';
+const LEGACY_SETTINGS_KEY = 'el-dato-falso-settings-v1';
+const RECENT_LIMIT = 30;
+
+const MODES = [
+  { key: 'clasico', emoji: '🙈', label: 'Clásico', sub: 'El mentiroso no sabe que su dato es falso' },
+  { key: 'consciente', emoji: '😏', label: 'Mentiroso consciente', sub: 'Sabe que miente… y tiene que defenderlo' },
+  { key: 'rapido', emoji: '⚡', label: 'Verdadero o falso', sub: 'Quiz rápido para todo el grupo' }
+];
+
+/* --------------------------------- Estado ---------------------------------- */
 
 let settings = {
+  mode: 'clasico',
   playerCount: 4,
   liarCount: 1,
-  categoryKey: TOPIC_MEZCLA_KEY
+  categories: TOPIC_CATEGORY_KEYS.slice(),
+  timerMinutes: 2,
+  quizLength: 10,
+  secretVote: false
 };
+
 let liarManuallySet = false;
 let round = null;
+let quiz = null;
 let isAdvancing = false;
-let lastTopicKey = null;
+const recent = [];
+const scores = Kit.createScores();
+let timer = null;
 
-function clamp(value, min, max) { return Math.min(max, Math.max(min, value)); }
-function maxLiarsFor(playerCount) { return Math.max(1, Math.floor((playerCount - 1) / 2)); }
-function suggestedLiarCount(playerCount) { return playerCount >= 7 ? Math.min(2, maxLiarsFor(playerCount)) : 1; }
+/* --------------------------------- Utilidades ------------------------------- */
 
-function shuffled(array) {
-  const copy = array.slice();
-  for (let i = copy.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [copy[i], copy[j]] = [copy[j], copy[i]];
-  }
-  return copy;
+function maxLiarsFor(playerCount) {
+  return Math.max(1, Math.floor((playerCount - 1) / 2));
 }
 
-function pickLiarIndices(playerCount, liarCount) {
-  const indices = Array.from({ length: playerCount }, (_, i) => i);
-  return new Set(shuffled(indices).slice(0, liarCount));
+function suggestedLiarCount(playerCount) {
+  return playerCount >= 7 ? Math.min(2, maxLiarsFor(playerCount)) : 1;
 }
 
-function pickTopicForCategory(categoryKey) {
-  let realKey = categoryKey;
-  if (categoryKey === TOPIC_MEZCLA_KEY) {
-    realKey = TOPIC_CATEGORY_KEYS[Math.floor(Math.random() * TOPIC_CATEGORY_KEYS.length)];
-  }
-  const list = TOPIC_CATEGORIES[realKey].topics;
-  let candidates = list;
-  const withKeys = list.map((t, i) => realKey + '-' + i);
-  if (list.length > 1 && lastTopicKey !== null) {
-    const filteredIdx = withKeys.map((k, i) => k !== lastTopicKey ? i : -1).filter((i) => i !== -1);
-    if (filteredIdx.length > 0) candidates = filteredIdx.map((i) => list[i]);
-  }
-  const idx = Math.floor(Math.random() * candidates.length);
-  const topic = candidates[idx];
-  const topicKey = realKey + '-' + list.indexOf(topic);
-  return { topic, topicKey, categoryLabel: TOPIC_CATEGORIES[realKey].label };
+function modeInfo(key) {
+  return MODES.find((m) => m.key === key) || MODES[0];
 }
 
-// Reparte UN dato por jugador: a los no mentirosos les toca un dato
-// verdadero distinto a cada uno, a los mentirosos un dato falso distinto
-// a cada uno. Nadie repite dato con otro jugador.
+function selectedTopics() {
+  const list = [];
+  settings.categories.forEach((key) => {
+    const cat = TOPIC_CATEGORIES[key];
+    if (!cat) return;
+    cat.topics.forEach((topic) => list.push({ id: `${key}/${topic.nombre}`, topic, key }));
+  });
+  return list;
+}
+
+function pickTopic(pool) {
+  let candidates = pool.filter((item) => !recent.includes(item.id));
+  if (!candidates.length) {
+    recent.length = 0;
+    candidates = pool;
+  }
+  const item = Kit.pick(candidates);
+  recent.push(item.id);
+  if (recent.length > RECENT_LIMIT) recent.shift();
+  return item;
+}
+
+/**
+ * Reparte UN dato por jugador: verdaderos distintos a los no mentirosos y
+ * falsos distintos a los mentirosos. Nadie repite dato.
+ */
 function assignFacts(topic, playerCount, liarIndices) {
-  const liarCount = liarIndices.size;
-  const truthCount = playerCount - liarCount;
-  const trueFacts = shuffled(topic.verdaderos).slice(0, truthCount);
-  const falseFacts = shuffled(topic.falsos).slice(0, liarCount);
-  const facts = new Array(playerCount);
+  const trueFacts = Kit.shuffled(topic.verdaderos).slice(0, playerCount - liarIndices.size);
+  const falseFacts = Kit.shuffled(topic.falsos).slice(0, liarIndices.size);
   let ti = 0;
   let fi = 0;
-  for (let i = 0; i < playerCount; i++) {
-    facts[i] = liarIndices.has(i) ? falseFacts[fi++] : trueFacts[ti++];
-  }
-  return facts;
+  return Array.from({ length: playerCount }, (_, i) => (liarIndices.has(i) ? falseFacts[fi++] : trueFacts[ti++]));
 }
 
+/* ------------------------------ Persistencia -------------------------------- */
+
 function loadSettings() {
-  try {
-    const raw = localStorage.getItem(SETTINGS_KEY);
-    if (!raw) return;
-    const parsed = JSON.parse(raw);
-    if (typeof parsed.playerCount === 'number') {
-      settings.playerCount = clamp(Math.round(parsed.playerCount), MIN_PLAYERS, MAX_PLAYERS);
-    }
-    if (typeof parsed.categoryKey === 'string' &&
-        (parsed.categoryKey === TOPIC_MEZCLA_KEY || TOPIC_CATEGORY_KEYS.includes(parsed.categoryKey))) {
-      settings.categoryKey = parsed.categoryKey;
-    }
-    const max = maxLiarsFor(settings.playerCount);
-    if (typeof parsed.liarCount === 'number') {
-      settings.liarCount = clamp(Math.round(parsed.liarCount), 1, max);
-      liarManuallySet = true;
-    } else {
-      settings.liarCount = suggestedLiarCount(settings.playerCount);
-    }
-  } catch (err) { /* localStorage inaccesible: seguimos con valores por defecto */ }
+  const saved = Kit.load(SETTINGS_KEY, null);
+  const legacy = saved ? null : Kit.load(LEGACY_SETTINGS_KEY, null);
+  const parsed = saved || legacy || {};
+
+  if (MODES.some((m) => m.key === parsed.mode)) settings.mode = parsed.mode;
+  if (typeof parsed.playerCount === 'number') {
+    settings.playerCount = Kit.clamp(Math.round(parsed.playerCount), MIN_PLAYERS, MAX_PLAYERS);
+  }
+  const max = maxLiarsFor(settings.playerCount);
+  if (typeof parsed.liarCount === 'number') {
+    settings.liarCount = Kit.clamp(Math.round(parsed.liarCount), 1, max);
+    liarManuallySet = true;
+  } else {
+    settings.liarCount = suggestedLiarCount(settings.playerCount);
+  }
+  if (Array.isArray(parsed.categories)) {
+    const valid = parsed.categories.filter((k) => TOPIC_CATEGORY_KEYS.includes(k));
+    if (valid.length) settings.categories = valid;
+  } else if (legacy && TOPIC_CATEGORY_KEYS.includes(legacy.categoryKey)) {
+    settings.categories = [legacy.categoryKey];
+  }
+  if (TIMER_OPTIONS.includes(parsed.timerMinutes)) settings.timerMinutes = parsed.timerMinutes;
+  if (QUIZ_OPTIONS.includes(parsed.quizLength)) settings.quizLength = parsed.quizLength;
+  if (typeof parsed.secretVote === 'boolean') settings.secretVote = parsed.secretVote;
 }
 
 function saveSettings() {
-  try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch (err) { /* no disponible */ }
+  Kit.save(SETTINGS_KEY, settings);
 }
+
+/* ---------------------------------- DOM -------------------------------------- */
 
 const el = {};
 
 function cacheDom() {
-  el.screens = document.querySelectorAll('.screen');
-  el.siteHeader = document.querySelector('.site-header');
-
-  el.playerCountValue = document.getElementById('player-count-value');
-  el.playerMinus = document.getElementById('btn-player-minus');
-  el.playerPlus = document.getElementById('btn-player-plus');
-  el.liarCountValue = document.getElementById('liar-count-value');
-  el.liarMinus = document.getElementById('btn-liar-minus');
-  el.liarPlus = document.getElementById('btn-liar-plus');
-  el.liarHint = document.getElementById('liar-hint');
-  el.categoryOptions = document.getElementById('category-options');
-  el.btnStart = document.getElementById('btn-start-game');
-
-  el.revealPlayerLabel = document.getElementById('reveal-player-label');
-  el.revealProgress = document.getElementById('reveal-progress');
-  el.holdBtn = document.getElementById('hold-reveal-btn');
-  el.holdPrompt = document.getElementById('hold-prompt');
-  el.rolePanel = document.getElementById('role-panel');
-  el.roleCategoryLabel = document.getElementById('role-category-label');
-  el.roleContent = document.getElementById('role-content');
-  el.btnNextPlayer = document.getElementById('btn-next-player');
-
-  el.btnGoToVote = document.getElementById('btn-go-to-vote');
-  el.voteButtons = document.getElementById('vote-buttons');
-  el.btnReveal = document.getElementById('btn-reveal');
-
-  el.resultsTopic = document.getElementById('results-topic');
-  el.resultsFacts = document.getElementById('results-facts');
-  el.resultsLiars = document.getElementById('results-liars');
-  el.resultsVotes = document.getElementById('results-votes');
-  el.btnPlayAgain = document.getElementById('btn-play-again');
-  el.btnNewGame = document.getElementById('btn-new-game');
-}
-
-function showScreen(name) {
-  el.screens.forEach((section) => { section.hidden = section.dataset.screen !== name; });
-  if (el.siteHeader) el.siteHeader.hidden = name !== 'setup';
-  window.scrollTo({ top: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
-}
-
-function renderCategoryOptions() {
-  el.categoryOptions.innerHTML = '';
-  const makePill = (key, label, count) => {
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'category-pill';
-    btn.setAttribute('role', 'radio');
-    btn.setAttribute('aria-checked', String(settings.categoryKey === key));
-    if (settings.categoryKey === key) btn.classList.add('is-selected');
-    btn.innerHTML = `<span class="category-pill-name">${label}</span>` +
-      (count ? `<span class="category-pill-count">${count} temas</span>` : '<span class="category-pill-count">Todas las categorías</span>');
-    btn.addEventListener('click', () => { settings.categoryKey = key; renderCategoryOptions(); });
-    return btn;
-  };
-  el.categoryOptions.appendChild(makePill(TOPIC_MEZCLA_KEY, 'Mezcla de todas', null));
-  TOPIC_CATEGORY_KEYS.forEach((key) => {
-    el.categoryOptions.appendChild(makePill(key, TOPIC_CATEGORIES[key].label, TOPIC_CATEGORIES[key].topics.length));
+  [
+    'mode-options', 'player-count-value', 'btn-player-minus', 'btn-player-plus',
+    'liar-row', 'liar-count-value', 'btn-liar-minus', 'btn-liar-plus', 'liar-hint',
+    'quiz-length-row', 'quiz-length-value', 'btn-quiz-minus', 'btn-quiz-plus',
+    'names-grid', 'btn-shuffle-names', 'category-options', 'category-summary', 'category-warning',
+    'btn-cat-all', 'btn-cat-none', 'timer-row', 'time-value', 'timer-hint', 'btn-time-minus', 'btn-time-plus',
+    'secret-vote-row', 'opt-secret-vote', 'opt-sound', 'opt-vibrate',
+    'setup-scoreline', 'setup-score-text', 'btn-reset-scores', 'btn-start-game',
+    'game-bar-title', 'btn-exit',
+    'reveal-dots', 'reveal-player', 'hold-reveal-btn', 'role-panel', 'role-category-label', 'role-emoji',
+    'role-content', 'role-extra', 'btn-next-player',
+    'discussion-title', 'starter-name', 'discussion-help', 'timer-block', 'timer-display', 'timer-ring',
+    'btn-timer-minus', 'btn-timer-toggle', 'btn-timer-plus', 'btn-go-vote',
+    'vote-area',
+    'quiz-progress', 'quiz-card', 'quiz-topic', 'quiz-fact', 'quiz-answer', 'quiz-help', 'quiz-who',
+    'quiz-players', 'btn-quiz-reveal', 'btn-quiz-next',
+    'verdict', 'verdict-emoji', 'verdict-title', 'verdict-text', 'reveal-box', 'results-topic',
+    'results-facts', 'vote-summary', 'scoreboard-card', 'scoreboard', 'btn-play-again', 'btn-new-game'
+  ].forEach((id) => {
+    el[id.replace(/-([a-z])/g, (_, c) => c.toUpperCase())] = document.getElementById(id);
   });
 }
 
+/* -------------------------------- Pantalla: Setup ----------------------------- */
+
 function renderSetup() {
+  Kit.renderOptions(el.modeOptions, MODES, {
+    className: 'mode-card',
+    isSelected: (key) => settings.mode === key,
+    onSelect: (key) => {
+      settings.mode = key;
+      saveSettings();
+      renderSetup();
+    }
+  });
+
+  const isQuiz = settings.mode === 'rapido';
   el.playerCountValue.textContent = String(settings.playerCount);
-  el.playerMinus.disabled = settings.playerCount <= MIN_PLAYERS;
-  el.playerPlus.disabled = settings.playerCount >= MAX_PLAYERS;
+  el.btnPlayerMinus.disabled = settings.playerCount <= MIN_PLAYERS;
+  el.btnPlayerPlus.disabled = settings.playerCount >= MAX_PLAYERS;
 
   const max = maxLiarsFor(settings.playerCount);
+  el.liarRow.hidden = isQuiz;
   el.liarCountValue.textContent = String(settings.liarCount);
-  el.liarMinus.disabled = settings.liarCount <= 1;
-  el.liarPlus.disabled = settings.liarCount >= max;
+  el.btnLiarMinus.disabled = settings.liarCount <= 1;
+  el.btnLiarPlus.disabled = settings.liarCount >= max;
   el.liarHint.textContent = `Máximo ${max} para ${settings.playerCount} jugadores`;
 
-  renderCategoryOptions();
+  el.quizLengthRow.hidden = !isQuiz;
+  const qi = QUIZ_OPTIONS.indexOf(settings.quizLength);
+  el.quizLengthValue.textContent = String(settings.quizLength);
+  el.btnQuizMinus.disabled = qi <= 0;
+  el.btnQuizPlus.disabled = qi >= QUIZ_OPTIONS.length - 1;
+
+  Kit.renderNameInputs(el.namesGrid, settings.playerCount);
+
+  Kit.renderOptions(el.categoryOptions, TOPIC_CATEGORY_KEYS.map((key) => ({
+    key,
+    emoji: TOPIC_CATEGORIES[key].emoji,
+    label: TOPIC_CATEGORIES[key].label,
+    sub: String(TOPIC_CATEGORIES[key].topics.length)
+  })), {
+    multi: true,
+    isSelected: (key) => settings.categories.includes(key),
+    onSelect: (key) => {
+      settings.categories = settings.categories.includes(key)
+        ? settings.categories.filter((k) => k !== key)
+        : settings.categories.concat(key);
+      saveSettings();
+      renderSetup();
+    }
+  });
+  const pool = selectedTopics();
+  const factCount = pool.reduce((sum, item) => sum + item.topic.verdaderos.length + item.topic.falsos.length, 0);
+  el.categorySummary.textContent = `${pool.length} temas · ${factCount} datos`;
+  el.categoryWarning.hidden = pool.length > 0;
+  el.btnStartGame.disabled = pool.length === 0;
+  el.btnStartGame.textContent = isQuiz ? '¡Empezar el quiz! ⚡' : '¡Repartir datos! 🎲';
+
+  el.timerRow.hidden = isQuiz;
+  el.secretVoteRow.hidden = isQuiz;
+  const ti = TIMER_OPTIONS.indexOf(settings.timerMinutes);
+  el.timeValue.textContent = settings.timerMinutes ? `${settings.timerMinutes}′` : '—';
+  el.timerHint.textContent = settings.timerMinutes ? 'Con cronómetro' : 'Sin cronómetro';
+  el.btnTimeMinus.disabled = ti <= 0;
+  el.btnTimePlus.disabled = ti >= TIMER_OPTIONS.length - 1;
+  el.optSecretVote.checked = settings.secretVote;
+
+  el.setupScoreline.hidden = scores.rounds === 0;
+  el.setupScoreText.textContent = `🏆 Marcador: ${scores.rounds} ${scores.rounds === 1 ? 'ronda' : 'rondas'}`;
 }
 
 function changePlayerCount(delta) {
-  settings.playerCount = clamp(settings.playerCount + delta, MIN_PLAYERS, MAX_PLAYERS);
+  settings.playerCount = Kit.clamp(settings.playerCount + delta, MIN_PLAYERS, MAX_PLAYERS);
   const max = maxLiarsFor(settings.playerCount);
-  settings.liarCount = liarManuallySet ? clamp(settings.liarCount, 1, max) : suggestedLiarCount(settings.playerCount);
+  settings.liarCount = liarManuallySet ? Kit.clamp(settings.liarCount, 1, max) : suggestedLiarCount(settings.playerCount);
+  saveSettings();
   renderSetup();
 }
 
 function changeLiarCount(delta) {
   const max = maxLiarsFor(settings.playerCount);
-  settings.liarCount = clamp(settings.liarCount + delta, 1, max);
+  settings.liarCount = Kit.clamp(settings.liarCount + delta, 1, max);
   liarManuallySet = true;
+  saveSettings();
   renderSetup();
 }
 
-/* -------------------------------- Reveal -------------------------------- */
+function stepOption(options, key, delta) {
+  const idx = Kit.clamp(options.indexOf(settings[key]) + delta, 0, options.length - 1);
+  settings[key] = options[idx];
+  saveSettings();
+  renderSetup();
+}
+
+/* -------------------------------- Pantalla: Reparto ----------------------------- */
 
 function renderRevealForCurrentPlayer() {
-  const playerNumber = round.currentIndex + 1;
-  el.revealPlayerLabel.textContent = `Jugador ${playerNumber}`;
-  el.revealProgress.textContent = `Jugador ${playerNumber} de ${settings.playerCount}`;
-
-  el.rolePanel.hidden = true;
-  el.roleContent.innerHTML = '';
-  el.roleCategoryLabel.textContent = '';
-  round.hasRevealedCurrent = false;
+  const i = round.current;
+  el.revealPlayer.textContent = round.names[i];
+  el.revealDots.innerHTML = round.names
+    .map((_, idx) => `<li class="${idx < i ? 'is-done' : idx === i ? 'is-current' : ''}"></li>`)
+    .join('');
+  clearRole();
   el.btnNextPlayer.disabled = true;
-  el.holdBtn.classList.remove('is-held');
-  el.holdPrompt.hidden = false;
+  el.btnNextPlayer.textContent = i === round.names.length - 1 ? 'Ya lo vi, ¡a leer!' : 'Ya lo vi, pasar al siguiente';
 }
 
-function populateRoleContent() {
-  const fact = round.facts[round.currentIndex];
-  el.roleCategoryLabel.textContent = `Tema: ${round.topic.emoji} ${round.topic.nombre}`;
-  el.roleContent.innerHTML = `<p class="fact-single">${fact}</p>`;
+function clearRole() {
+  el.holdRevealBtn.classList.remove('is-held');
+  el.rolePanel.classList.remove('is-alert');
+  el.roleCategoryLabel.textContent = '';
+  el.roleEmoji.textContent = '';
+  el.roleContent.textContent = '';
+  el.roleExtra.textContent = '';
 }
 
-function startRevealHold(evt) {
-  if (evt) evt.preventDefault();
+function populateRole() {
+  const i = round.current;
+  el.roleCategoryLabel.textContent = `Tema: ${round.topic.nombre}`;
+  el.roleEmoji.textContent = round.topic.emoji;
+  el.roleContent.textContent = round.facts[i];
+  if (round.mode === 'consciente' && round.liars.has(i)) {
+    el.rolePanel.classList.add('is-alert');
+    el.roleExtra.textContent = '🤥 Este dato es FALSO: defiéndelo como si fuera cierto';
+  }
+}
+
+function startRevealHold() {
   if (!round) return;
-  populateRoleContent();
-  el.rolePanel.hidden = false;
-  el.holdPrompt.hidden = true;
-  el.holdBtn.classList.add('is-held');
-  round.hasRevealedCurrent = true;
+  populateRole();
+  el.holdRevealBtn.classList.add('is-held');
   el.btnNextPlayer.disabled = false;
+  Kit.buzz(20);
 }
 
 function endRevealHold() {
-  el.rolePanel.hidden = true;
-  el.roleContent.innerHTML = '';
-  el.roleCategoryLabel.textContent = '';
-  el.holdBtn.classList.remove('is-held');
-  if (round) el.holdPrompt.hidden = false;
+  el.holdRevealBtn.classList.remove('is-held');
+  setTimeout(() => {
+    if (!el.holdRevealBtn.classList.contains('is-held')) clearRole();
+  }, 300);
 }
 
 function goToNextPlayer() {
-  if (isAdvancing) return;
-  if (!round || el.btnNextPlayer.disabled) return;
+  if (isAdvancing || !round || el.btnNextPlayer.disabled) return;
   isAdvancing = true;
-  el.btnNextPlayer.disabled = true;
-
-  round.currentIndex += 1;
-  if (round.currentIndex >= settings.playerCount) {
-    goToVote();
+  clearRole();
+  round.current += 1;
+  if (round.current >= round.names.length) {
+    startDiscussionPhase();
   } else {
     renderRevealForCurrentPlayer();
+    Kit.sfx.tap();
   }
   isAdvancing = false;
 }
 
+/* ---------------------------- Lectura y debate ------------------------------- */
+
+function startDiscussionPhase() {
+  el.discussionTitle.textContent = `${round.topic.emoji} ${round.topic.nombre}`;
+  el.starterName.textContent = Kit.pick(round.names);
+  el.discussionHelp.textContent = round.mode === 'consciente'
+    ? 'Leed vuestro dato en voz alta. Los mentirosos saben que el suyo es falso: ¡preguntadles, apretadles!'
+    : 'Leed vuestro dato en voz alta. Ojo: quien tiene el dato falso no lo sabe. ¿Cuál suena a mentira?';
+  el.timerBlock.hidden = settings.timerMinutes === 0;
+  if (settings.timerMinutes > 0) timer.start(settings.timerMinutes * 60);
+  Kit.sfx.reveal();
+  Kit.showScreen('discussion');
+}
+
 /* -------------------------------- Votación -------------------------------- */
 
-function goToVote() {
-  round.votes = new Array(settings.playerCount).fill(0);
-  renderVoteButtons();
-  showScreen('vote');
-}
-
-function renderVoteButtons() {
-  el.voteButtons.innerHTML = '';
-  for (let i = 0; i < settings.playerCount; i++) {
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'vote-btn';
-    btn.innerHTML = `<span>Jugador ${i + 1}</span><span class="vote-count">${round.votes[i]}</span>`;
-    btn.addEventListener('click', () => {
-      round.votes[i] += 1;
-      renderVoteButtons();
-    });
-    el.voteButtons.appendChild(btn);
-  }
-}
-
-/* -------------------------------- Resultados -------------------------------- */
-
-function endRound() {
-  if (!round) return;
-
-  el.resultsTopic.innerHTML = `${round.topic.emoji} ${round.topic.nombre}`;
-  el.resultsFacts.innerHTML = round.facts.map((f, i) => {
-    const isLiar = round.liarIndices.has(i);
-    return `<li class="${isLiar ? 'is-false' : 'is-true'}">Jugador ${i + 1}: ${f}</li>`;
-  }).join('');
-
-  const liarNumbers = Array.from(round.liarIndices).map((i) => i + 1).sort((a, b) => a - b);
-  el.resultsLiars.innerHTML = '';
-  liarNumbers.forEach((num) => {
-    const li = document.createElement('li');
-    li.textContent = `Jugador ${num}`;
-    el.resultsLiars.appendChild(li);
+function startVote() {
+  timer.stop();
+  Kit.runVote(el.voteArea, {
+    names: round.names,
+    secret: settings.secretVote,
+    onDone: finishVote
   });
+  Kit.showScreen('vote');
+}
 
-  const sortedByVotes = round.votes
-    .map((v, i) => ({ v, i }))
+function setVerdict(type, emoji, title, text) {
+  el.verdict.className = 'verdict' + (type ? ` is-${type}` : '');
+  el.verdictEmoji.textContent = emoji;
+  el.verdictTitle.textContent = title;
+  el.verdictText.innerHTML = text;
+  el.verdictEmoji.style.animation = 'none';
+  void el.verdictEmoji.offsetWidth;
+  el.verdictEmoji.style.animation = '';
+}
+
+function namesOf(indices) {
+  return indices.map((i) => `<strong>${Kit.esc(round.names[i])}</strong>`).join(' y ');
+}
+
+function finishVote(result) {
+  const liars = Array.from(round.liars).sort((a, b) => a - b);
+  const k = liars.length;
+  const t = Kit.tally(result, k);
+  const caught = t.accused.filter((i) => round.liars.has(i));
+  const crewWins = caught.length === k;
+  const plural = k > 1;
+
+  scores.startRound();
+  if (crewWins) {
+    setVerdict('win', '🕵️', plural ? '¡Mentirosos descubiertos!' : '¡Mentiroso descubierto!',
+      `${namesOf(liars)} ${plural ? 'tenían' : 'tenía'} el dato falso y no ${plural ? 'colaron' : 'coló'}. 1 punto para cada jugador con dato verdadero.`);
+    round.names.forEach((name, i) => { if (!round.liars.has(i)) scores.add(name, 1); });
+    Kit.sfx.win();
+    Kit.confetti(['#38bdf8', '#818cf8', '#34d399', '#facc15', '#f0f6fb']);
+  } else {
+    let text;
+    if (t.tie) {
+      text = `Empate en la votación: no se acusa a nadie. ${namesOf(liars)} gana${plural ? 'n' : ''} 2 puntos.`;
+    } else {
+      const innocents = t.accused.filter((i) => !round.liars.has(i));
+      text = (innocents.length ? `${namesOf(innocents)} decía la verdad. ` : '') +
+        `${namesOf(liars)} ${plural ? 'tenían' : 'tenía'} el dato falso y gana${plural ? 'n' : ''} 2 puntos.`;
+    }
+    setVerdict('lose', '🤥', '¡La mentira ha colado!', text);
+    liars.forEach((i) => scores.add(round.names[i], 2));
+    Kit.sfx.lose();
+  }
+  scores.endRound();
+  Kit.buzz(crewWins ? [60, 40, 60] : 200);
+
+  el.resultsTopic.textContent = `${round.topic.emoji} ${round.topic.nombre}`;
+  el.resultsFacts.innerHTML = round.facts.map((fact, i) => {
+    const isLiar = round.liars.has(i);
+    return `<li class="${isLiar ? 'is-false' : 'is-true'}"><strong>${isLiar ? '❌' : '✅'} ${Kit.esc(round.names[i])}</strong>${Kit.esc(fact)}</li>`;
+  }).join('');
+  const ranked = result.votes
+    .map((v, i) => ({ v, name: round.names[i] }))
     .filter((x) => x.v > 0)
     .sort((a, b) => b.v - a.v);
-  const topN = sortedByVotes.slice(0, round.liarIndices.size).map((x) => x.i + 1);
-  const correctCount = topN.filter((num) => liarNumbers.includes(num)).length;
+  el.voteSummary.textContent = ranked.length ? 'Votos: ' + ranked.map((x) => `${x.name} ${x.v}`).join(' · ') : '';
+  el.revealBox.hidden = false;
 
-  el.resultsVotes.textContent = sortedByVotes.length === 0
-    ? 'Nadie votó.'
-    : `Más votados: Jugador ${topN.join(', Jugador ')}. Acertasteis ${correctCount} de ${liarNumbers.length} mentiroso(s).`;
+  scores.render(el.scoreboard, round.names);
+  el.scoreboardCard.hidden = false;
+  Kit.showScreen('results');
+}
 
-  lastTopicKey = round.topicKey;
-  showScreen('results');
+/* ---------------------------- Verdadero o falso ------------------------------ */
+
+function startQuiz() {
+  const pool = selectedTopics();
+  const facts = [];
+  pool.forEach(({ topic }) => {
+    topic.verdaderos.forEach((text) => facts.push({ text, isTrue: true, topic }));
+    topic.falsos.forEach((text) => facts.push({ text, isTrue: false, topic }));
+  });
+  // Mitad verdaderos, mitad falsos (aprox.), sin repetir tema seguido si se puede.
+  const trues = Kit.shuffled(facts.filter((f) => f.isTrue));
+  const falses = Kit.shuffled(facts.filter((f) => !f.isTrue));
+  const total = Math.min(settings.quizLength, facts.length);
+  const nFalse = Math.min(falses.length, Math.round(total * (0.35 + Math.random() * 0.3)));
+  const chosen = Kit.shuffled(falses.slice(0, nFalse).concat(trues.slice(0, total - nFalse)));
+
+  round = null;
+  quiz = { names: Kit.playerNames(settings.playerCount), facts: chosen, index: 0, correct: new Set() };
+  scores.startRound();
+  el.gameBarTitle.textContent = `Quiz · ${modeInfo('rapido').label}`;
+  Kit.keepAwake(true);
+  Kit.showScreen('quiz');
+  renderQuizFact();
+}
+
+function renderQuizFact() {
+  const fact = quiz.facts[quiz.index];
+  quiz.correct = new Set();
+  el.quizProgress.textContent = `Dato ${quiz.index + 1} de ${quiz.facts.length}`;
+  el.quizTopic.textContent = `${fact.topic.emoji} ${fact.topic.nombre}`;
+  el.quizFact.textContent = fact.text;
+  el.quizAnswer.hidden = true;
+  el.quizCard.classList.remove('is-true', 'is-false');
+  el.quizHelp.hidden = false;
+  el.quizWho.hidden = true;
+  el.btnQuizReveal.hidden = false;
+  el.btnQuizNext.hidden = true;
+}
+
+function revealQuizFact() {
+  const fact = quiz.facts[quiz.index];
+  el.quizAnswer.hidden = false;
+  el.quizAnswer.className = `quiz-answer ${fact.isTrue ? 'is-true' : 'is-false'}`;
+  el.quizAnswer.textContent = fact.isTrue ? '✅ Verdadero' : '❌ Falso';
+  el.quizCard.classList.add(fact.isTrue ? 'is-true' : 'is-false');
+  el.quizHelp.hidden = true;
+  el.quizWho.hidden = false;
+  renderQuizPlayers();
+  el.btnQuizReveal.hidden = true;
+  el.btnQuizNext.hidden = false;
+  el.btnQuizNext.textContent = quiz.index + 1 >= quiz.facts.length ? 'Ver resultados 🏁' : 'Siguiente dato ▶';
+  if (fact.isTrue) Kit.sfx.win(); else Kit.sfx.reveal();
+  Kit.buzz(30);
+}
+
+function renderQuizPlayers() {
+  Kit.renderOptions(el.quizPlayers, quiz.names.map((name, i) => ({ key: i, label: name })), {
+    multi: true,
+    isSelected: (i) => quiz.correct.has(i),
+    onSelect: (i) => {
+      if (quiz.correct.has(i)) quiz.correct.delete(i); else quiz.correct.add(i);
+      renderQuizPlayers();
+    }
+  });
+}
+
+function nextQuizFact() {
+  quiz.correct.forEach((i) => scores.add(quiz.names[i], 1));
+  quiz.index += 1;
+  if (quiz.index < quiz.facts.length) {
+    renderQuizFact();
+    Kit.sfx.tap();
+    return;
+  }
+  scores.endRound();
+  el.revealBox.hidden = true;
+  scores.render(el.scoreboard, quiz.names);
+  el.scoreboardCard.hidden = false;
+  setVerdict('win', '🏁', '¡Fin del quiz!', `${quiz.facts.length} datos después, así queda el marcador. ¿Otra ronda?`);
+  Kit.sfx.win();
+  Kit.confetti(['#38bdf8', '#818cf8', '#34d399', '#facc15', '#f0f6fb']);
+  Kit.showScreen('results');
 }
 
 /* ---------------------------------- Ronda ----------------------------------- */
 
 function startNewRound() {
-  const picked = pickTopicForCategory(settings.categoryKey);
-  const liarIndices = pickLiarIndices(settings.playerCount, settings.liarCount);
-  const facts = assignFacts(picked.topic, settings.playerCount, liarIndices);
+  const pool = selectedTopics();
+  if (!pool.length) {
+    backToSetup();
+    return;
+  }
+  if (settings.mode === 'rapido') {
+    startQuiz();
+    return;
+  }
+  const n = settings.playerCount;
+  const item = pickTopic(pool);
+  const liars = Kit.pickIndices(n, Kit.clamp(settings.liarCount, 1, maxLiarsFor(n)));
+  quiz = null;
   round = {
-    topic: picked.topic,
-    topicKey: picked.topicKey,
-    categoryLabel: picked.categoryLabel,
-    liarIndices,
-    facts,
-    currentIndex: 0,
-    hasRevealedCurrent: false,
-    votes: []
+    mode: settings.mode,
+    names: Kit.playerNames(n),
+    topic: item.topic,
+    liars,
+    facts: assignFacts(item.topic, n, liars),
+    current: 0
   };
-  showScreen('reveal');
+  el.gameBarTitle.textContent = `Ronda ${scores.rounds + 1} · ${modeInfo(round.mode).label}`;
+  Kit.keepAwake(true);
+  Kit.showScreen('reveal');
   renderRevealForCurrentPlayer();
 }
 
 function backToSetup() {
+  if (timer) timer.stop();
   round = null;
+  quiz = null;
+  Kit.keepAwake(false);
   renderSetup();
-  showScreen('setup');
+  Kit.showScreen('setup');
 }
 
+function inGame() {
+  return Boolean(round || quiz);
+}
+
+function confirmExit() {
+  if (!inGame()) return true;
+  return window.confirm('¿Salir de la partida? Se perderá la ronda actual (el marcador se mantiene).');
+}
+
+/* --------------------------------- Eventos ----------------------------------- */
+
 function bindEvents() {
-  el.playerMinus.addEventListener('click', () => changePlayerCount(-1));
-  el.playerPlus.addEventListener('click', () => changePlayerCount(1));
-  el.liarMinus.addEventListener('click', () => changeLiarCount(-1));
-  el.liarPlus.addEventListener('click', () => changeLiarCount(1));
+  el.btnPlayerMinus.addEventListener('click', () => changePlayerCount(-1));
+  el.btnPlayerPlus.addEventListener('click', () => changePlayerCount(1));
+  el.btnLiarMinus.addEventListener('click', () => changeLiarCount(-1));
+  el.btnLiarPlus.addEventListener('click', () => changeLiarCount(1));
+  el.btnQuizMinus.addEventListener('click', () => stepOption(QUIZ_OPTIONS, 'quizLength', -1));
+  el.btnQuizPlus.addEventListener('click', () => stepOption(QUIZ_OPTIONS, 'quizLength', 1));
+  el.btnTimeMinus.addEventListener('click', () => stepOption(TIMER_OPTIONS, 'timerMinutes', -1));
+  el.btnTimePlus.addEventListener('click', () => stepOption(TIMER_OPTIONS, 'timerMinutes', 1));
+  el.btnShuffleNames.addEventListener('click', () => {
+    Kit.shuffleNames(el.namesGrid, settings.playerCount);
+    Kit.toast('Orden mezclado 🔀');
+  });
+  el.btnCatAll.addEventListener('click', () => {
+    settings.categories = TOPIC_CATEGORY_KEYS.slice();
+    saveSettings();
+    renderSetup();
+  });
+  el.btnCatNone.addEventListener('click', () => {
+    settings.categories = [];
+    saveSettings();
+    renderSetup();
+  });
 
-  el.btnStart.addEventListener('click', () => { saveSettings(); startNewRound(); });
+  el.optSecretVote.addEventListener('change', () => {
+    settings.secretVote = el.optSecretVote.checked;
+    saveSettings();
+  });
+  Kit.bindPrefToggle(el.optSound, 'sound');
+  Kit.bindPrefToggle(el.optVibrate, 'vibrate');
 
-  const press = (e) => startRevealHold(e);
-  const release = (e) => { if (e) e.preventDefault(); endRevealHold(); };
-  el.holdBtn.addEventListener('pointerdown', press);
-  el.holdBtn.addEventListener('pointerup', release);
-  el.holdBtn.addEventListener('pointerleave', release);
-  el.holdBtn.addEventListener('pointercancel', release);
-  el.holdBtn.addEventListener('touchstart', press, { passive: false });
-  el.holdBtn.addEventListener('touchend', release);
-  el.holdBtn.addEventListener('touchcancel', release);
-  el.holdBtn.addEventListener('contextmenu', (e) => e.preventDefault());
-  el.holdBtn.addEventListener('dragstart', (e) => e.preventDefault());
+  el.btnResetScores.addEventListener('click', () => {
+    scores.reset();
+    renderSetup();
+    Kit.toast('Marcador a cero');
+  });
 
+  el.btnStartGame.addEventListener('click', () => {
+    saveSettings();
+    try { history.pushState({ inGame: true }, ''); } catch (err) { /* sin historial */ }
+    startNewRound();
+  });
+
+  Kit.bindHold(el.holdRevealBtn, startRevealHold, endRevealHold);
   el.btnNextPlayer.addEventListener('click', goToNextPlayer);
 
-  el.btnReveal.addEventListener('click', endRound);
+  timer = Kit.createTimer({
+    display: el.timerDisplay,
+    ring: el.timerRing,
+    toggleBtn: el.btnTimerToggle,
+    onEnd: () => Kit.toast('⏰ ¡Se acabó el tiempo! A votar')
+  });
+  el.btnTimerMinus.addEventListener('click', () => timer.adjust(-TIMER_STEP));
+  el.btnTimerPlus.addEventListener('click', () => timer.adjust(TIMER_STEP));
+  el.btnTimerToggle.addEventListener('click', () => timer.toggle());
+  el.btnGoVote.addEventListener('click', startVote);
+
+  el.btnQuizReveal.addEventListener('click', revealQuizFact);
+  el.btnQuizNext.addEventListener('click', nextQuizFact);
 
   el.btnPlayAgain.addEventListener('click', startNewRound);
   el.btnNewGame.addEventListener('click', backToSetup);
+  el.btnExit.addEventListener('click', () => {
+    if (confirmExit()) backToSetup();
+  });
+
+  window.addEventListener('popstate', () => {
+    if (!inGame()) return;
+    if (confirmExit()) {
+      backToSetup();
+    } else {
+      try { history.pushState({ inGame: true }, ''); } catch (err) { /* sin historial */ }
+    }
+  });
 }
 
 function init() {
   cacheDom();
   loadSettings();
-  renderSetup();
   bindEvents();
-  showScreen('setup');
+  renderSetup();
+  Kit.showScreen('setup');
 }
 
 document.addEventListener('DOMContentLoaded', init);
