@@ -124,7 +124,8 @@ function loadSettings() {
 }
 
 function saveSettings() {
-  Kit.save(SETTINGS_KEY, settings);
+  // en una sala no se guarda su número de jugadores como el de «mismo móvil»
+  Kit.save(SETTINGS_KEY, salaBackup ? Object.assign({}, settings, salaBackup) : settings);
 }
 
 /* ---------------------------------- DOM -------------------------------------- */
@@ -157,8 +158,16 @@ function cacheDom() {
 
 /* -------------------------------- Pantalla: Setup ----------------------------- */
 
+// En la sala no hay «Verdadero o falso» (es un quiz en un solo móvil)
+function setupModes() {
+  if (!Sala.isHosting()) return MODES;
+  const list = MODES.filter((m) => m.key !== 'rapido');
+  if (!list.some((m) => m.key === settings.mode)) settings.mode = list[0].key;
+  return list;
+}
+
 function renderSetup() {
-  Kit.renderOptions(el.modeOptions, MODES, {
+  Kit.renderOptions(el.modeOptions, setupModes(), {
     className: 'mode-card',
     isSelected: (key) => settings.mode === key,
     onSelect: (key) => {
@@ -528,6 +537,71 @@ function confirmExit() {
   if (!inGame()) return true;
   return window.confirm('¿Salir de la partida? Se perderá la ronda actual (el marcador se mantiene).');
 }
+
+/* --------------------------- Con código de sala ------------------------------ */
+
+// Mientras se configura una sala, los jugadores son los que han entrado:
+// aquí se guarda el número de «mismo móvil» para devolverlo al salir.
+let salaBackup = null;
+
+function salaHosting(on, players) {
+  if (on) {
+    if (!salaBackup) salaBackup = { playerCount: settings.playerCount };
+    settings.playerCount = Kit.clamp(players, MIN_PLAYERS, MAX_PLAYERS);
+    settings.liarCount = Kit.clamp(settings.liarCount, 1, maxLiarsFor(settings.playerCount));
+  } else if (salaBackup) {
+    settings.playerCount = salaBackup.playerCount;
+    salaBackup = null;
+  }
+  renderSetup();
+}
+
+/** Reparto de una ronda de sala para n jugadores, con los ajustes actuales. */
+function salaDeal(n) {
+  const pool = selectedTopics();
+  if (!pool.length) return { error: 'Elige al menos una categoría' };
+  const item = pickTopic(pool);
+  const liars = Kit.pickIndices(n, Kit.clamp(settings.liarCount, 1, maxLiarsFor(n)));
+  const facts = assignFacts(item.topic, n, liars);
+  const aware = settings.mode === 'consciente';
+  return {
+    cards: facts.map((fact, i) => {
+      const lie = aware && liars.has(i);
+      return {
+        label: `Tema: ${item.topic.nombre}`, emoji: item.topic.emoji, content: fact,
+        extra: lie ? '🤥 Este dato es FALSO: defiéndelo como si fuera cierto' : '', alert: lie
+      };
+    }),
+    special: Array.from(liars),
+    info: { mode: settings.mode, nombre: item.topic.nombre, emoji: item.topic.emoji },
+    title: modeInfo(settings.mode).label,
+    help: aware
+      ? 'Leed vuestro dato en voz alta. Los mentirosos saben que el suyo es falso: ¡preguntadles, apretadles!'
+      : 'Leed vuestro dato en voz alta. Ojo: quien tiene el dato falso no lo sabe. ¿Cuál suena a mentira?',
+    seconds: settings.timerMinutes * 60,
+    voteTitle: '¿Quién tiene el dato falso?'
+  };
+}
+
+Sala.configure({
+  id: 'dato',
+  maxPlayers: MAX_PLAYERS,
+  holdPrompt: 'Mantén pulsado para ver tu dato',
+  contentClass: 'fact-text',
+  extraClass: 'fact-warning',
+  who: { one: 'mentiroso', many: 'mentirosos', One: 'Mentiroso', Many: 'Mentirosos', the: 'el mentiroso', The: 'El mentiroso' },
+  hosting: salaHosting,
+  deal: salaDeal,
+  resultsHtml(info, { names, special, cards, esc }) {
+    return '<p class="results-label">Tema</p>' +
+      `<p class="results-word">${esc(`${info.emoji} ${info.nombre}`)}</p>` +
+      '<p class="results-label">Quién tenía qué dato</p><ul class="results-facts">' +
+      cards.map((c, i) => {
+        const lie = special.includes(i);
+        return `<li class="${lie ? 'is-false' : 'is-true'}"><strong>${lie ? '❌' : '✅'} ${esc(names[i])}</strong>${esc(c.content)}</li>`;
+      }).join('') + '</ul>';
+  }
+});
 
 /* --------------------------------- Eventos ----------------------------------- */
 
