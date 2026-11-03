@@ -158,12 +158,8 @@ function cacheDom() {
 
 /* -------------------------------- Pantalla: Setup ----------------------------- */
 
-// En la sala no hay «Verdadero o falso» (es un quiz en un solo móvil)
 function setupModes() {
-  if (!Sala.isHosting()) return MODES;
-  const list = MODES.filter((m) => m.key !== 'rapido');
-  if (!list.some((m) => m.key === settings.mode)) settings.mode = list[0].key;
-  return list;
+  return MODES;
 }
 
 function renderSetup() {
@@ -219,6 +215,8 @@ function renderSetup() {
   el.categoryWarning.hidden = pool.length > 0;
   el.btnStartGame.disabled = pool.length === 0;
   el.btnStartGame.textContent = isQuiz ? '¡Empezar el quiz! ⚡' : '¡Repartir datos! 🎲';
+  const salaStart = document.querySelector('.sala-start [data-sala="start"]');
+  if (salaStart) salaStart.textContent = isQuiz ? 'Empezar el quiz ⚡' : 'Empezar ronda 🎲';
 
   el.timerRow.hidden = isQuiz;
   el.secretVoteRow.hidden = isQuiz;
@@ -583,8 +581,131 @@ function salaDeal(n) {
   };
 }
 
+/* ------------------ Sala: «Verdadero o falso» en cada móvil ------------------ */
+
+// Los datos viajan como referencias (categoría, tema, verdadero/falso, nº) y
+// cada móvil saca el texto de data.js: así la sala cabe en un mensaje.
+function quizFactFromRef([key, t, v, k]) {
+  const topic = TOPIC_CATEGORIES[key] && TOPIC_CATEGORIES[key].topics[t];
+  if (!topic) return null;
+  const text = (v ? topic.verdaderos : topic.falsos)[k];
+  return text ? { text, isTrue: Boolean(v), topic } : null;
+}
+
+const salaQuiz = {
+  when: () => settings.mode === 'rapido',
+  start(n) {
+    const refs = [];
+    settings.categories.forEach((key) => {
+      const cat = TOPIC_CATEGORIES[key];
+      if (!cat) return;
+      cat.topics.forEach((topic, t) => {
+        topic.verdaderos.forEach((_, k) => refs.push([key, t, 1, k]));
+        topic.falsos.forEach((_, k) => refs.push([key, t, 0, k]));
+      });
+    });
+    if (!refs.length) return { error: 'Elige al menos una categoría' };
+    const trues = Kit.shuffled(refs.filter((r) => r[2]));
+    const falses = Kit.shuffled(refs.filter((r) => !r[2]));
+    const total = Math.min(settings.quizLength, refs.length);
+    const nFalse = Math.min(falses.length, Math.round(total * (0.35 + Math.random() * 0.3)));
+    const q = Kit.shuffled(falses.slice(0, nFalse).concat(trues.slice(0, total - nFalse)));
+    return { q, i: 0, ans: {}, show: false, end: false, pts: new Array(n).fill(0), last: [] };
+  },
+  act(g, who, a, fromHost) {
+    if (g.end) return null;
+    const n = g.pts.length;
+    const reveal = () => {
+      const truth = Boolean(g.q[g.i][2]);
+      g.last = [];
+      for (let i = 0; i < n; i++) {
+        if (g.ans[i] === truth) { g.pts[i] += 1; g.last.push(i); }
+      }
+      g.show = true;
+    };
+    if (a.k === 'ans' && !g.show && (a.v === true || a.v === false) && who >= 0) {
+      g.ans[who] = a.v;
+      if (Object.keys(g.ans).length >= n) reveal(); // ha respondido todo el mundo
+      return {};
+    }
+    if (a.k === 'reveal' && fromHost && !g.show) { reveal(); return {}; }
+    if (a.k === 'next' && fromHost && g.show) {
+      g.i += 1;
+      g.ans = {};
+      g.show = false;
+      g.last = [];
+      if (g.i >= g.q.length) g.end = true;
+      return {};
+    }
+    return null;
+  },
+  phaseKey: (g) => `${g.i}-${g.show ? 1 : 0}-${g.end ? 1 : 0}`,
+  phaseFx(g, me) {
+    if (g.end) return 'win';
+    if (g.show && me >= 0) return g.last.includes(me) ? null : 'lose';
+    return null;
+  },
+  card: () => null,
+  render({ g, me, host, names, esc, hostName }) {
+    const n = g.pts.length;
+    const ranking = () => {
+      const max = Math.max(1, ...g.pts);
+      return '<ol class="score-list">' + names.map((name, i) => ({ name, p: g.pts[i], i }))
+        .sort((a, b) => b.p - a.p)
+        .map((x, r) => `<li class="score-row${x.p === max && x.p > 0 ? ' is-leader' : ''}">` +
+          `<span class="score-bar" style="width:${Math.round((x.p / max) * 100)}%"></span>` +
+          `<span class="score-rank">${r + 1}</span><span class="score-name">${esc(x.name)}${x.i === me ? ' (tú)' : ''}</span>` +
+          `<span class="score-pts">${x.p}</span></li>`).join('') + '</ol>';
+    };
+    if (g.end) {
+      const best = Math.max(...g.pts);
+      const winners = names.filter((_, i) => g.pts[i] === best);
+      return '<div class="verdict is-win"><span class="verdict-emoji" aria-hidden="true">🏁</span>' +
+        '<h2 class="verdict-title">¡Fin del quiz!</h2>' +
+        `<p class="verdict-text">${best > 0 ? `Gana ${winners.map((w) => `<strong>${esc(w)}</strong>`).join(' y ')} con ${best} de ${g.q.length}.` : 'Nadie ha acertado ninguno…'}</p></div>` +
+        `<div class="card scoreboard"><h3 class="card-title">🏆 Marcador</h3>${ranking()}</div>` +
+        (host ? '<div class="results-actions"><button type="button" class="btn btn-primary btn-large" data-sala="again">Otro quiz ⚡</button>' +
+          '<button type="button" class="btn btn-secondary btn-large" data-sala="lobby">Cambiar ajustes</button></div>'
+          : `<p class="setup-hint sala-center">⏳ Esperando a que ${esc(hostName)} empiece otra partida.</p>`);
+    }
+    const fact = quizFactFromRef(g.q[g.i]) || { text: '—', isTrue: true, topic: { emoji: '❔', nombre: '' } };
+    const answered = Object.keys(g.ans).length;
+    const mine = me >= 0 ? g.ans[me] : undefined;
+    let html = `<p class="vote-progress">Dato ${g.i + 1} de ${g.q.length}</p>` +
+      '<h2 class="screen-title">¿Verdadero o falso?</h2>' +
+      `<div class="card quiz-card${g.show ? (fact.isTrue ? ' is-true' : ' is-false') : ''}">` +
+      `<p class="quiz-topic">${esc(`${fact.topic.emoji} ${fact.topic.nombre}`)}</p>` +
+      `<p class="fact-text">${esc(fact.text)}</p>` +
+      (g.show ? `<p class="quiz-answer ${fact.isTrue ? 'is-true' : 'is-false'}">${fact.isTrue ? '✅ Verdadero' : '❌ Falso'}</p>` : '') +
+      '</div>';
+    if (!g.show) {
+      html += me >= 0
+        ? '<div class="quiz-pick">' +
+          `<button type="button" class="quiz-btn is-v${mine === true ? ' is-selected' : ''}" data-act='{"k":"ans","v":true}'>👍 Verdadero</button>` +
+          `<button type="button" class="quiz-btn is-f${mine === false ? ' is-selected' : ''}" data-act='{"k":"ans","v":false}'>👎 Falso</button></div>` +
+          `<p class="setup-hint sala-center">${mine === undefined ? 'Responde desde tu móvil. Puedes cambiarlo hasta que se revele.' : 'Respuesta enviada. Puedes cambiarla hasta que se revele.'}</p>`
+        : '<p class="screen-help">⏳ Has entrado con el quiz empezado. Jugarás en el siguiente.</p>';
+      html += `<p class="sala-count">✋ Han respondido <strong>${answered}</strong> de ${n}</p>`;
+      html += host ? `<button type="button" class="btn btn-primary btn-large" data-act='{"k":"reveal"}'>Revelar 👀</button>`
+        : `<p class="setup-hint sala-center">${esc(hostName)} revelará la respuesta.</p>`;
+      return html;
+    }
+    if (me >= 0) {
+      const ok = g.last.includes(me);
+      html += `<p class="quiz-mine ${ok ? 'is-ok' : 'is-ko'}">${g.ans[me] === undefined ? '😶 No respondiste' : ok ? '🎉 ¡Acertaste! +1' : '😬 Fallaste'}</p>`;
+    }
+    html += '<div class="quiz-who"><p>Han acertado</p><ul class="chips is-neutral quiz-chips">' +
+      (g.last.length ? g.last.map((i) => `<li class="is-ok">${esc(names[i])}</li>`).join('') : '<li>Nadie</li>') + '</ul></div>' +
+      `<div class="card scoreboard"><h3 class="card-title">🏆 Marcador</h3>${ranking()}</div>`;
+    html += host ? `<button type="button" class="btn btn-primary btn-large" data-act='{"k":"next"}'>${g.i + 1 >= g.q.length ? 'Ver resultados 🏁' : 'Siguiente dato ▶'}</button>`
+      : `<p class="setup-hint sala-center">${esc(hostName)} pasará al siguiente dato.</p>`;
+    return html;
+  }
+};
+
 Sala.configure({
   id: 'dato',
+  custom: salaQuiz,
   maxPlayers: MAX_PLAYERS,
   holdPrompt: 'Mantén pulsado para ver tu dato',
   contentClass: 'fact-text',

@@ -918,3 +918,24 @@ strong { color: var(--text); }
 .quiz-who { width: 100%; }
 .quiz-who p { margin: 0 0 0.6rem; font-size: 0.9rem; }
 .quiz-who .category-grid { justify-content: center; }
+
+/* ---------------- Sala: «Verdadero o falso» desde cada móvil ---------------- */
+
+.quiz-pick { width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+.quiz-btn {
+  min-height: 64px; padding: 0.8rem 0.5rem; border-radius: var(--radius-lg); cursor: pointer;
+  font: inherit; font-weight: 800; font-size: 1.1rem; color: var(--text);
+  background: var(--surface); border: 2px solid var(--border-strong);
+  transition: transform 0.12s, background 0.2s, border-color 0.2s;
+}
+.quiz-btn:active { transform: scale(0.97); }
+.quiz-btn.is-v.is-selected, .quiz-btn.is-v.is-sent { border-color: var(--success); background: rgba(var(--success-rgb), 0.22); }
+.quiz-btn.is-f.is-selected, .quiz-btn.is-f.is-sent { border-color: var(--danger); background: rgba(var(--danger-rgb), 0.22); }
+.quiz-mine { margin: 0; font-family: var(--font-display); font-weight: 800; font-size: 1.35rem; text-align: center; }
+.quiz-mine.is-ok { color: var(--success); }
+.quiz-mine.is-ko { color: var(--danger); }
+.quiz-chips li.is-ok { background: rgba(var(--success-rgb), 0.15); color: var(--success); border-color: rgba(var(--success-rgb), 0.5); }
+#sala-root .scoreboard { width: 100%; }
+@media (orientation: landscape) and (max-height: 520px) {
+  .quiz-btn { min-height: 48px; }
+}
